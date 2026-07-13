@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Envio de Documentação</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --azul: #00609F;
+    --azul-escuro: #063C63;
+    --azul-claro: #83B2D0;
+    --azul-fundo: #EAF3FA;
+    --verde: #13A438;
+    --verde-fundo: #E8F7EC;
+    --ambar: #F28B1F;
+    --laranja: #E74926;
+    --tinta: #10293D;
+    --tinta-suave: #4C6478;
+    --branco: #FFFFFF;
+    --raio: 18px;
+    --sombra: 0 8px 28px rgba(6, 60, 99, 0.10);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    margin: 0;
+    min-height: 100vh;
+    color: var(--tinta);
+    background:
+      radial-gradient(1200px 600px at 50% -10%, #d9ecfa 0%, var(--azul-fundo) 55%, #f7fbfe 100%);
+    padding: 20px 14px 40px;
+  }
+
+  h1, h2, .display {
+    font-family: 'Baloo 2', system-ui, sans-serif;
+    font-weight: 700;
+    margin: 0;
+    color: var(--azul-escuro);
+  }
+
+  .envelope {
+    max-width: 460px;
+    margin: 0 auto;
+  }
+
+  /* -------- Cabeçalho fixo (logo + trilha de progresso) -------- */
+  .topo {
+    text-align: center;
+    padding: 6px 0 18px;
+  }
+
+  .topo img {
+    height: 56px;
+  }
+
+  .trilha {
+    margin-top: 18px;
+    position: relative;
+  }
+
+  .trilha svg { display: block; width: 100%; height: 34px; }
+
+  .trilha-legendas {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    padding: 0 2px;
+  }
+
+  .trilha-legendas span {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--tinta-suave);
+    width: 25%;
+    text-align: center;
+  }
+
+  .trilha-legendas span.ativa { color: var(--azul); }
+  .trilha-legendas span.feita { color: var(--verde); }
+
+  /* -------- Cartão principal -------- */
+  .cartao {
+    background: var(--branco);
+    border-radius: var(--raio);
+    box-shadow: var(--sombra);
+    padding: 28px 24px 26px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cartao::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, var(--azul) 0%, var(--azul-claro) 45%, var(--ambar) 75%, var(--laranja) 100%);
+  }
+
+  .tela { display: none; }
+  .tela.ativa { display: block; animation: entrar .35s ease; }
+
+  @keyframes entrar {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* -------- Tela de boas-vindas -------- */
+  .icone-boasvindas {
+    width: 74px; height: 74px;
+    border-radius: 50%;
+    background: var(--verde-fundo);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 18px;
+  }
+  .icone-boasvindas svg { width: 38px; height: 38px; }
+
+  .tela h1 { font-size: 1.5rem; text-align: center; }
+  .subtitulo {
+    text-align: center;
+    color: var(--tinta-suave);
+    font-size: 0.95rem;
+    margin-top: 6px;
+  }
+
+  .mensagem-boasvindas {
+    margin-top: 22px;
+    font-size: 0.96rem;
+    line-height: 1.6;
+    color: var(--tinta);
+  }
+  .mensagem-boasvindas p { margin: 0 0 14px; }
+  .mensagem-boasvindas strong { color: var(--azul-escuro); }
+
+  .aviso-atencao {
+    margin-top: 16px;
+    background: #FFF6EC;
+    border: 1px solid #FBDFB8;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 0.86rem;
+    color: #8A5417;
+    display: flex;
+    gap: 10px;
+  }
+  .aviso-atencao svg { flex: none; width: 18px; height: 18px; margin-top: 2px; }
+
+  /* -------- Formulário -------- */
+  label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.88rem;
+    margin: 18px 0 7px;
+    color: var(--azul-escuro);
+  }
+  label.primeira { margin-top: 0; }
+
+  input[type=text], select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid #D6E4EE;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-family: inherit;
+    color: var(--tinta);
+    background: #FBFDFE;
+    transition: border-color .15s;
+  }
+  input[type=text]:focus, select:focus {
+    outline: none;
+    border-color: var(--azul);
+    background: var(--branco);
+  }
+
+  .pill-group { display: flex; gap: 10px; margin-top: 2px; }
+  .pill-group.tres { flex-wrap: wrap; }
+
+  .pill {
+    flex: 1;
+    position: relative;
+  }
+  .pill input {
+    position: absolute;
+    opacity: 0;
+    width: 100%; height: 100%;
+    top: 0; left: 0;
+    cursor: pointer;
+    margin: 0;
+  }
+  .pill span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px 10px;
+    border: 1.5px solid #D6E4EE;
+    border-radius: 12px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--tinta-suave);
+    text-align: center;
+    transition: all .15s;
+  }
+  .pill input:checked + span {
+    border-color: var(--azul);
+    background: var(--azul-fundo);
+    color: var(--azul);
+  }
+  .pill input:focus-visible + span {
+    outline: 2px solid var(--azul);
+    outline-offset: 2px;
+  }
+
+  .toggle-linha {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 18px;
+    padding: 13px 14px;
+    border: 1.5px solid #D6E4EE;
+    border-radius: 12px;
+    background: #FBFDFE;
+  }
+  .toggle-linha span.rotulo {
+    font-size: 0.87rem;
+    font-weight: 600;
+    color: var(--tinta);
+  }
+  .chave {
+    position: relative;
+    width: 44px; height: 26px;
+    flex: none;
+  }
+  .chave input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .chave .trilho {
+    position: absolute; inset: 0;
+    background: #CBD8E1;
+    border-radius: 999px;
+    transition: background .15s;
+  }
+  .chave .bola {
+    position: absolute; top: 3px; left: 3px;
+    width: 20px; height: 20px;
+    background: var(--branco);
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+    transition: transform .15s;
+  }
+  .chave input:checked ~ .trilho { background: var(--azul); }
+  .chave input:checked ~ .bola { transform: translateX(18px); }
+
+  /* -------- Documentos -------- */
+  .doc-item {
+    border: 1.5px solid #D6E4EE;
+    border-radius: 14px;
+    padding: 14px;
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: border-color .15s, background .15s;
+  }
+  .doc-item.enviado {
+    border-color: var(--verde);
+    background: var(--verde-fundo);
+  }
+  .doc-icone {
+    flex: none;
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: var(--azul-fundo);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--azul);
+  }
+  .doc-item.enviado .doc-icone { background: #D3F0DA; color: var(--verde); }
+  .doc-icone svg { width: 20px; height: 20px; }
+  .doc-texto { flex: 1; min-width: 0; }
+  .doc-texto .doc-label { font-weight: 700; font-size: 0.9rem; color: var(--tinta); }
+  .doc-texto small { color: var(--tinta-suave); font-size: 0.78rem; display: block; margin-top: 2px; }
+  .doc-texto .doc-arquivo {
+    color: var(--verde);
+    font-size: 0.78rem;
+    font-weight: 600;
+    display: block;
+    margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .doc-item input[type=file] { display: none; }
+  .doc-botao {
+    flex: none;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 8px 12px;
+    border-radius: 9px;
+    background: var(--azul);
+    color: var(--branco);
+    cursor: pointer;
+    border: none;
+    white-space: nowrap;
+  }
+  .doc-item.enviado .doc-botao { background: var(--verde); }
+
+  /* -------- Botões -------- */
+  .botoes { margin-top: 26px; display: flex; flex-direction: column; gap: 10px; }
+
+  .btn {
+    border: none;
+    border-radius: 13px;
+    padding: 15px 20px;
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: transform .1s, box-shadow .15s;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primario {
+    background: linear-gradient(135deg, var(--ambar), var(--laranja));
+    color: var(--branco);
+    box-shadow: 0 6px 18px rgba(231, 73, 38, 0.28);
+  }
+  .btn-primario:disabled {
+    background: #C9D3DA; color: #8A97A1; box-shadow: none; cursor: not-allowed;
+  }
+  .btn-secundario {
+    background: transparent;
+    color: var(--azul);
+    padding: 10px;
+  }
+  .btn-whatsapp {
+    background: #25D366;
+    color: var(--branco);
+    box-shadow: 0 6px 18px rgba(37, 211, 102, 0.30);
+  }
+
+  .status { margin-top: 12px; font-size: 0.88rem; text-align: center; font-weight: 600; }
+
+  /* -------- Tela de sucesso -------- */
+  .icone-sucesso {
+    width: 88px; height: 88px;
+    border-radius: 50%;
+    background: var(--verde-fundo);
+    display: flex; align-items: center; justify-content: center;
+    margin: 4px auto 20px;
+  }
+  .icone-sucesso svg { width: 46px; height: 46px; }
+
+  .prazo-caixa {
+    margin-top: 20px;
+    background: var(--azul-fundo);
+    border-radius: 14px;
+    padding: 16px 18px;
+    text-align: center;
+  }
+  .prazo-caixa .numero {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--azul);
+  }
+  .prazo-caixa .rotulo {
+    font-size: 0.82rem;
+    color: var(--tinta-suave);
+    font-weight: 600;
+  }
+
+  small.rodape-cred {
+    display: block;
+    text-align: center;
+    color: var(--tinta-suave);
+    opacity: .6;
+    margin-top: 18px;
+    font-size: 0.72rem;
+  }
+
+  @media (max-width: 380px) {
+    .cartao { padding: 22px 18px; }
+  }
+
+  /* -------- Modal do scanner -------- */
+  .doc-icone img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
+
+  #scanner-modal { position: fixed; inset: 0; background: #000; z-index: 1000; display: flex; flex-direction: column; font-family: 'Inter', system-ui, sans-serif; }
+  #scanner-modal.hidden { display: none; }
+  .scanner-view { flex: 1; display: none; flex-direction: column; position: relative; overflow: hidden; }
+  .scanner-view.ativo { display: flex; }
+  .scanner-topo { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; color: white; }
+  .scanner-topo button { width: auto; background: rgba(255,255,255,0.15); border: none; color: white; padding: 8px 16px; border-radius: 9px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+  .scanner-video-wrap { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background: #000; }
+  #scanner-video { max-width: 100%; max-height: 100%; }
+  .scanner-rodape { padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 10px; }
+  .btn-capturar { width: 72px; height: 72px; border-radius: 50%; background: white; border: 4px solid var(--ambar); margin: 0 auto; padding: 0; cursor: pointer; }
+  .link-galeria { color: white; text-align: center; background: none; border: none; text-decoration: underline; font-weight: 500; font-size: 0.85rem; padding: 6px; width: auto; margin: 8px auto 0; cursor: pointer; }
+
+  .canvas-wrap { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  #canvas-ajuste, #canvas-resultado { max-width: 100%; max-height: 100%; touch-action: none; }
+  .canto {
+    position: absolute; width: 28px; height: 28px; margin-left: -14px; margin-top: -14px;
+    border-radius: 50%; background: rgba(0,96,159,0.55); border: 3px solid #fff;
+    touch-action: none; cursor: grab;
+  }
+
+  .mensagem-qualidade { color: white; text-align: center; padding: 0 24px; }
+  .mensagem-qualidade .icone { font-size: 3rem; margin-bottom: 12px; }
+  .mensagem-qualidade h3 { margin: 0 0 8px; font-family: 'Baloo 2', sans-serif; }
+  .mensagem-qualidade p { color: #ccc; font-size: 0.9rem; }
+
+  .spinner { width: 40px; height: 40px; border: 4px solid #444; border-top-color: var(--ambar); border-radius: 50%; animation: girar 0.8s linear infinite; margin: 0 auto 16px; }
+  @keyframes girar { to { transform: rotate(360deg); } }
+
+  .scanner-rodape .btn-primario, .scanner-rodape button.btn-usar {
+    background: linear-gradient(135deg, var(--ambar), var(--laranja));
+    color: white; border: none; border-radius: 13px; padding: 15px 20px;
+    font-size: 1rem; font-weight: 700; font-family: inherit; cursor: pointer; width: 100%;
+  }
+</style>
+</head>
+<body>
+
+<div class="envelope">
+
+  <div class="topo">
+    <img src="/static/logo-icone.png" alt="Logo">
+    <div class="trilha">
+      <svg viewBox="0 0 400 34" preserveAspectRatio="none">
+        <path id="trilho-fundo" d="M 10 24 Q 100 4, 200 24 T 390 24" fill="none" stroke="#D6E4EE" stroke-width="3" stroke-linecap="round"/>
+        <path id="trilho-progresso" d="M 10 24 Q 100 4, 200 24 T 390 24" fill="none" stroke="var(--verde)" stroke-width="3" stroke-linecap="round"
+              stroke-dasharray="600" stroke-dashoffset="600"/>
+        <g id="pontos"></g>
+      </svg>
+      <div class="trilha-legendas">
+        <span data-legenda="0">Boas-vindas</span>
+        <span data-legenda="1">Seus dados</span>
+        <span data-legenda="2">Documentos</span>
+        <span data-legenda="3">Concluído</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="cartao">
+
+    <!-- TELA 0 · BOAS-VINDAS -->
+    <section class="tela ativa" data-tela="0">
+      <div class="icone-boasvindas">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#13A438" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.5 2.5 3 6 3s6-1.5 6-3v-5"/>
+        </svg>
+      </div>
+      <h1>Olá, aluno(a)!</h1>
+      <p class="subtitulo">Você está chegando na etapa final do seu curso 🎓</p>
+
+      <div class="mensagem-boasvindas">
+        <p>Para que seu <strong>certificado seja emitido sem atraso</strong>, precisamos que você nos envie a sua documentação completa e legível.</p>
+        <p>Vamos te guiar em 3 passos rápidos: primeiro alguns dados seus, depois o envio das fotos dos documentos, e pronto.</p>
+      </div>
+
+      <div class="aviso-atencao">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#B4700E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 9v4M12 17h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/>
+        </svg>
+        <span>Caso não possua algum dos documentos solicitados, entre em contato com o seu consultor antes de continuar, para receber orientação.</span>
+      </div>
+
+      <div class="botoes">
+        <button type="button" class="btn btn-primario" onclick="irPara(1)">
+          Começar
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- TELA 1 · DADOS PESSOAIS -->
+    <section class="tela" data-tela="1">
+      <h2>Seus dados</h2>
+      <p class="subtitulo" style="text-align:left; margin-top:4px;">Informe seu CPF pra gente confirmar sua matrícula.</p>
+
+      <label class="primeira" for="cpf">CPF</label>
+      <input type="text" id="cpf" name="cpf" inputmode="numeric" placeholder="000.000.000-00" required>
+
+      <div class="botoes">
+        <button type="button" class="btn btn-primario" id="btn-buscar-cpf">
+          Buscar meus dados
+        </button>
+        <button type="button" class="btn btn-secundario" onclick="irPara(0)">Voltar</button>
+      </div>
+      <div class="status" id="status-busca-cpf"></div>
+
+      <!-- Revelado quando o CPF é novo (nenhum envio anterior) -->
+      <div id="bloco-dados-novo" class="hidden" style="margin-top:6px;">
+        <label for="nome">Nome completo</label>
+        <input type="text" id="nome" name="nome" readonly>
+
+        <label for="curso">Curso</label>
+        <input type="text" id="curso-exibicao" readonly>
+        <input type="hidden" id="curso" name="curso">
+
+        <label for="email-exibicao">E-mail</label>
+        <input type="text" id="email-exibicao" readonly>
+
+        <label for="telefone-exibicao">Telefone</label>
+        <input type="text" id="telefone-exibicao" readonly>
+
+        <p class="subtitulo" style="text-align:left; margin-top:2px;">Confira se os dados acima estão corretos antes de continuar.</p>
+
+        <label>Sexo</label>
+        <div class="pill-group">
+          <label class="pill">
+            <input type="radio" name="sexo" value="masculino" required>
+            <span>Masculino</span>
+          </label>
+          <label class="pill">
+            <input type="radio" name="sexo" value="feminino" required>
+            <span>Feminino</span>
+          </label>
+        </div>
+
+        <div class="toggle-linha">
+          <span class="rotulo">Meu RG não possui o número do CPF impresso</span>
+          <label class="chave">
+            <input type="checkbox" id="rg_sem_cpf" name="rg_sem_cpf">
+            <span class="trilho"></span>
+            <span class="bola"></span>
+          </label>
+        </div>
+
+        <label>Você vai enviar:</label>
+        <div class="pill-group">
+          <label class="pill">
+            <input type="radio" name="tipo_certidao" value="nascimento" required>
+            <span>Certidão de Nascimento</span>
+          </label>
+          <label class="pill">
+            <input type="radio" name="tipo_certidao" value="casamento" required>
+            <span>Certidão de Casamento</span>
+          </label>
+        </div>
+
+        <div class="botoes">
+          <button type="button" class="btn btn-primario" onclick="validarEAvancar()">
+            Continuar
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Revelado quando o CPF já está aguardando revisão -->
+      <div id="bloco-aguardando" class="hidden aviso-atencao" style="margin-top:18px; background:var(--azul-fundo); border-color:var(--azul-claro); color:var(--azul-escuro);">
+        <span>Sua documentação já foi enviada e está aguardando revisão da secretaria. Assim que for avaliada, você será avisado(a).</span>
+      </div>
+
+      <!-- Revelado quando o CPF já foi aprovado -->
+      <div id="bloco-ja-aprovado" class="hidden aviso-atencao" style="margin-top:18px; background:var(--verde-fundo); border-color:var(--verde); color:#0e6b22;">
+        <span>Sua documentação já foi conferida e aprovada. Se precisar reenviar algo, fale com a secretaria pelo WhatsApp.</span>
+      </div>
+    </section>
+
+    <!-- TELA 2 · DOCUMENTOS -->
+    <section class="tela" data-tela="2">
+      <h2 id="titulo-documentos">Envie seus documentos</h2>
+      <p class="subtitulo" style="text-align:left; margin-top:4px;" id="subtitulo-documentos">Toque em cada item para tirar uma foto ou escolher da galeria.</p>
+
+      <div id="lista-documentos"></div>
+
+      <div class="botoes">
+        <button type="submit" class="btn btn-primario" id="btn-enviar">Enviar documentação</button>
+        <button type="button" class="btn btn-secundario" onclick="irPara(1)">Voltar</button>
+      </div>
+      <div class="status" id="status-mensagem"></div>
+    </section>
+
+    <!-- TELA 3 · CONCLUÍDO -->
+    <section class="tela" data-tela="3">
+      <div class="icone-sucesso">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#13A438" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 6 9 17l-5-5"/>
+        </svg>
+      </div>
+      <h1 style="text-align:center;">Documentação enviada!</h1>
+      <p class="subtitulo">Recebemos tudo certinho por aqui.</p>
+
+      <div class="prazo-caixa">
+        <div class="numero">30 a 45 dias úteis</div>
+        <div class="rotulo">é o prazo para seu certificado ficar pronto</div>
+      </div>
+
+      <div class="mensagem-boasvindas" style="text-align:center;">
+        <p>Qualquer dúvida, fale com a gente pelo WhatsApp.</p>
+      </div>
+
+      <div class="botoes">
+        <a class="btn btn-whatsapp" id="link-whatsapp" href="#" target="_blank" rel="noopener">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2c-5.5 0-9.96 4.46-9.96 9.96 0 1.76.46 3.45 1.32 4.95L2 22l5.24-1.37a9.9 9.9 0 0 0 4.8 1.22h.01c5.5 0 9.96-4.46 9.96-9.96S17.54 2 12.04 2Zm0 18.2h-.01a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.11.82.83-3.03-.2-.31a8.23 8.23 0 0 1-1.26-4.39c0-4.55 3.7-8.25 8.25-8.25 2.2 0 4.27.86 5.83 2.42a8.2 8.2 0 0 1 2.42 5.83c0 4.55-3.71 8.24-8.26 8.24Zm4.52-6.17c-.25-.12-1.46-.72-1.68-.8-.23-.08-.39-.12-.56.13-.16.24-.64.8-.79.97-.14.16-.29.18-.54.06-.25-.12-1.04-.38-1.98-1.22-.73-.65-1.23-1.46-1.37-1.7-.14-.25-.01-.38.11-.5.11-.11.25-.29.37-.43.12-.15.16-.25.25-.41.08-.16.04-.31-.02-.43-.06-.12-.56-1.35-.77-1.85-.2-.48-.41-.42-.56-.43h-.48c-.16 0-.43.06-.65.31-.23.24-.85.83-.85 2.03s.87 2.36 1 2.52c.12.16 1.7 2.6 4.13 3.64.58.25 1.03.4 1.38.51.58.18 1.11.16 1.53.1.47-.07 1.46-.6 1.66-1.17.21-.58.21-1.08.14-1.18-.06-.1-.22-.16-.47-.28Z"/></svg>
+          Falar no WhatsApp
+        </a>
+        <button type="button" class="btn btn-secundario" onclick="reiniciar()">Enviar outra documentação</button>
+      </div>
+    </section>
+
+  </div>
+
+  <small class="rodape-cred">Envio seguro de documentos</small>
+</div>
+
+<script>
+// ============================================================
+// CONFIGURAÇÃO — edite aqui
+// ============================================================
+// Coloque o número de WhatsApp da equipe (código do país + DDD + número, só dígitos)
+const NUMERO_WHATSAPP = "5561900000000"; // <-- TROQUE pelo número real
+const MENSAGEM_WHATSAPP = "Olá! Acabei de enviar minha documentação e tenho uma dúvida.";
+
+// ============================================================
+// Navegação entre telas
+// ============================================================
+let telaAtual = 0;
+const TOTAL_TELAS = 4;
+
+function irPara(indice) {
+  document.querySelectorAll(".tela").forEach((el) => {
+    el.classList.toggle("ativa", Number(el.dataset.tela) === indice);
+  });
+  telaAtual = indice;
+  atualizarTrilha();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  if (indice === 2) renderizarDocumentos();
+}
+
+function validarEAvancar() {
+  const camposDaTela1 = document.querySelectorAll('[data-tela="1"] input, [data-tela="1"] select');
+  for (const campo of camposDaTela1) {
+    if (campo.hasAttribute("required")) {
+      const grupo = campo.name;
+      if (campo.type === "radio") {
+        const marcado = document.querySelector(`input[name="${grupo}"]:checked`);
+        if (!marcado) { campo.reportValidity(); return; }
+      } else if (!campo.checkValidity()) {
+        campo.reportValidity();
+        return;
+      }
+    }
+  }
+  irPara(2);
+}
+
+function reiniciar() {
+  document.querySelectorAll('input[type=text], select').forEach(el => el.value = "");
+  document.querySelectorAll('input[type=checkbox], input[type=radio]').forEach(el => el.checked = false);
+  listaDiv.innerHTML = "";
+  irPara(0);
+}
+
+// ============================================================
+// Trilha de progresso (SVG)
+// ============================================================
+const trilhoProgresso = document.getElementById("trilho-progresso");
+const pontosGrupo = document.getElementById("pontos");
+const COMPRIMENTO_TRILHO = 600;
+
+const POSICOES = [
+  { x: 10, y: 24 }, { x: 137, y: 8 }, { x: 263, y: 8 }, { x: 390, y: 24 },
+];
+
+POSICOES.forEach((p, i) => {
+  const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  c.setAttribute("cx", p.x); c.setAttribute("cy", p.y); c.setAttribute("r", 6);
+  c.setAttribute("fill", "#D6E4EE");
+  c.setAttribute("id", `ponto-${i}`);
+  pontosGrupo.appendChild(c);
+});
+
+function atualizarTrilha() {
+  const fracao = telaAtual / (TOTAL_TELAS - 1);
+  trilhoProgresso.setAttribute("stroke-dashoffset", COMPRIMENTO_TRILHO * (1 - fracao));
+
+  POSICOES.forEach((_, i) => {
+    const ponto = document.getElementById(`ponto-${i}`);
+    if (i < telaAtual) ponto.setAttribute("fill", "#13A438");
+    else if (i === telaAtual) ponto.setAttribute("fill", "#F28B1F");
+    else ponto.setAttribute("fill", "#D6E4EE");
+  });
+
+  document.querySelectorAll(".trilha-legendas span").forEach((el) => {
+    const i = Number(el.dataset.legenda);
+    el.classList.toggle("ativa", i === telaAtual);
+    el.classList.toggle("feita", i < telaAtual);
+  });
+}
+atualizarTrilha();
+
+// ============================================================
+// Máscara do CPF -- formata como 000.000.000-00 enquanto digita
+// ============================================================
+function formatarCPF(valor) {
+  const digitos = valor.replace(/\D/g, "").slice(0, 11);
+  if (digitos.length > 9) return digitos.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, "$1.$2.$3-$4");
+  if (digitos.length > 6) return digitos.replace(/(\d{3})(\d{3})(\d{1,3})/, "$1.$2.$3");
+  if (digitos.length > 3) return digitos.replace(/(\d{3})(\d{1,3})/, "$1.$2");
+  return digitos;
+}
+
+const campoCPF = document.getElementById("cpf");
+campoCPF.addEventListener("input", () => {
+  campoCPF.value = formatarCPF(campoCPF.value);
+});
+
+// ============================================================
+// Busca dos dados do aluno no SIGA a partir do CPF
+// ============================================================
+const btnBuscarCPF = document.getElementById("btn-buscar-cpf");
+const statusBuscaCPF = document.getElementById("status-busca-cpf");
+const blocoDadosNovo = document.getElementById("bloco-dados-novo");
+const blocoAguardando = document.getElementById("bloco-aguardando");
+const blocoJaAprovado = document.getElementById("bloco-ja-aprovado");
+
+function mostrarStatusBusca(mensagem, cor) {
+  statusBuscaCPF.textContent = mensagem;
+  statusBuscaCPF.style.color = cor;
+}
+
+function esconderBlocosPosBusca() {
+  blocoDadosNovo.classList.add("hidden");
+  blocoAguardando.classList.add("hidden");
+  blocoJaAprovado.classList.add("hidden");
+}
+
+btnBuscarCPF.addEventListener("click", async () => {
+  const cpfDigitado = campoCPF.value.replace(/\D/g, "");
+  if (cpfDigitado.length !== 11) {
+    campoCPF.reportValidity();
+    mostrarStatusBusca("Informe um CPF válido, com 11 números.", "#c5221f");
+    return;
+  }
+
+  esconderBlocosPosBusca();
+  btnBuscarCPF.disabled = true;
+  mostrarStatusBusca("Buscando seus dados...", "#4C6478");
+
+  try {
+    const resposta = await fetch("/buscar-cpf", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cpf: cpfDigitado }),
+    });
+    const resultado = await resposta.json();
+
+    if (!resposta.ok) {
+      mostrarStatusBusca(resultado.erro || "Não foi possível buscar seus dados.", "#c5221f");
+      return;
+    }
+
+    if (resultado.status === "aguardando_validacao") {
+      mostrarStatusBusca("", "#4C6478");
+      blocoAguardando.classList.remove("hidden");
+      return;
+    }
+
+    if (resultado.status === "aprovado") {
+      mostrarStatusBusca("", "#4C6478");
+      blocoJaAprovado.classList.remove("hidden");
+      return;
+    }
+
+    // status === "novo": preenche os dados vindos do SIGA pra pessoa conferir
+    document.getElementById("nome").value = resultado.nome || "";
+    document.getElementById("curso-exibicao").value = resultado.curso || "";
+    document.getElementById("curso").value = resultado.curso || "";
+    document.getElementById("email-exibicao").value = resultado.email || "";
+    document.getElementById("telefone-exibicao").value = resultado.telefone || "";
+
+    mostrarStatusBusca("Dados encontrados! Confira e complete abaixo.", "#137333");
+    blocoDadosNovo.classList.remove("hidden");
+  } catch (e) {
+    mostrarStatusBusca("Erro de conexão. Tente novamente.", "#c5221f");
+  } finally {
+    btnBuscarCPF.disabled = false;
+  }
+});
+
+// ============================================================
+// Documentos exigidos (mesma regra do backend em documentos_config.py)
+// ============================================================
+const DOCUMENTOS = [
+  { id: "rg_frente", label: "RG - Frente", condicao: () => true },
+  { id: "rg_verso", label: "RG - Verso", condicao: () => true },
+  { id: "cpf", label: "CPF", condicao: (r) => r.rg_sem_cpf },
+  { id: "titulo_eleitor", label: "Título de Eleitor", condicao: () => true },
+  { id: "reservista", label: "Certificado de Reservista", condicao: (r) => r.sexo === "masculino" },
+  { id: "comprovante_residencia", label: "Comprovante de Residência", condicao: () => true },
+  { id: "certidao_nascimento", label: "Certidão de Nascimento", condicao: (r) => r.tipo_certidao === "nascimento" },
+  { id: "certidao_casamento", label: "Certidão de Casamento", condicao: (r) => r.tipo_certidao === "casamento" },
+  { id: "certificado_ensino_medio", label: "Certificado do Ensino Médio", condicao: () => true },
+  { id: "historico_ensino_medio", label: "Histórico do Ensino Médio", condicao: () => true },
+];
+
+const listaDiv = document.getElementById("lista-documentos");
+
+function respostasAtuais() {
+  return {
+    sexo: document.querySelector('input[name="sexo"]:checked')?.value,
+    rg_sem_cpf: document.getElementById("rg_sem_cpf").checked,
+    tipo_certidao: document.querySelector('input[name="tipo_certidao"]:checked')?.value,
+  };
+}
+
+const ICONE_UPLOAD = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0-12 4 4m-4-4-4 4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>`;
+const ICONE_OK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`;
+
+function renderizarDocumentos() {
+  const respostas = respostasAtuais();
+  listaDiv.innerHTML = "";
+
+  DOCUMENTOS.filter((doc) => doc.condicao(respostas)).forEach((doc) => {
+    const bloco = document.createElement("div");
+    bloco.className = "doc-item";
+    bloco.id = `bloco-${doc.id}`;
+    bloco.innerHTML = `
+      <div class="doc-icone">${ICONE_UPLOAD}</div>
+      <div class="doc-texto">
+        <div class="doc-label">${doc.label}</div>
+        <small>Nenhum arquivo selecionado</small>
+      </div>
+      <button type="button" class="doc-botao" onclick="document.getElementById('input-${doc.id}').click()">Anexar</button>
+      <input type="file" accept="image/*" capture="environment" name="${doc.id}" id="input-${doc.id}" required>
+    `;
+    listaDiv.appendChild(bloco);
+
+    const input = bloco.querySelector(`#input-${doc.id}`);
+    input.addEventListener("change", () => {
+      if (input.files.length > 0) {
+        bloco.classList.add("enviado");
+        bloco.querySelector(".doc-icone").innerHTML = ICONE_OK;
+        bloco.querySelector("small").textContent = input.files[0].name;
+        bloco.querySelector(".doc-botao").textContent = "Trocar";
+      }
+    });
+  });
+}
+
+// Recalcula os documentos exigidos se o aluno voltar e mudar uma resposta
+document.addEventListener("change", (e) => {
+  if (["sexo", "tipo_certidao"].includes(e.target.name) || e.target.id === "rg_sem_cpf") {
+    if (telaAtual >= 2) renderizarDocumentos();
+  }
+});
+
+// ============================================================
+// Compressão de imagem (mesma lógica de antes)
+// ============================================================
+function comprimirImagem(arquivo) {
+  return new Promise((resolve, reject) => {
+    const imagem = new Image();
+    const leitor = new FileReader();
+
+    leitor.onload = (e) => { imagem.src = e.target.result; };
+    leitor.onerror = reject;
+
+    imagem.onload = () => {
+      const TAMANHO_MAX = 1600;
+      let { width, height } = imagem;
+
+      if (width > height && width > TAMANHO_MAX) {
+        height = Math.round((height * TAMANHO_MAX) / width);
+        width = TAMANHO_MAX;
+      } else if (height > TAMANHO_MAX) {
+        width = Math.round((width * TAMANHO_MAX) / height);
+        height = TAMANHO_MAX;
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext("2d").drawImage(imagem, 0, 0, width, height);
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) { reject(new Error("Falha ao comprimir imagem")); return; }
+          resolve(new File([blob], arquivo.name.replace(/\.\w+$/, ".jpg"), { type: "image/jpeg" }));
+        },
+        "image/jpeg",
+        0.75
+      );
+    };
+    imagem.onerror = reject;
+
+    leitor.readAsDataURL(arquivo);
+  });
+}
+
+// ============================================================
+// Envio
+// ============================================================
+document.getElementById("btn-enviar").addEventListener("click", async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById("btn-enviar");
+  const statusDiv = document.getElementById("status-mensagem");
+
+  const inputsArquivo = Array.from(document.querySelectorAll('#lista-documentos input[type="file"]'));
+  const faltando = inputsArquivo.filter((i) => i.files.length === 0);
+  if (faltando.length > 0) {
+    statusDiv.style.color = "#c5221f";
+    statusDiv.textContent = "Anexe todos os documentos antes de enviar.";
+    faltando[0].closest(".doc-item").scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+
+  btn.disabled = true;
+  statusDiv.style.color = "#4C6478";
+  statusDiv.textContent = "";
+
+  try {
+    const formData = new FormData();
+    formData.append("nome", document.getElementById("nome").value);
+    formData.append("cpf", document.getElementById("cpf").value);
+    formData.append("curso", document.getElementById("curso").value);
+    formData.append("sexo", document.querySelector('input[name="sexo"]:checked').value);
+    formData.append("tipo_certidao", document.querySelector('input[name="tipo_certidao"]:checked').value);
+    if (document.getElementById("rg_sem_cpf").checked) formData.append("rg_sem_cpf", "on");
+
+    for (let i = 0; i < inputsArquivo.length; i++) {
+      const input = inputsArquivo[i];
+      btn.textContent = `Preparando fotos... (${i + 1}/${inputsArquivo.length})`;
+      const arquivoComprimido = await comprimirImagem(input.files[0]);
+      formData.append(input.name, arquivoComprimido);
+    }
+
+    btn.textContent = "Enviando documentação...";
+    const resposta = await fetch("/enviar", { method: "POST", body: formData });
+    const resultado = await resposta.json();
+
+    if (resposta.ok) {
+      document.getElementById("link-whatsapp").href =
+        `https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent(MENSAGEM_WHATSAPP)}`;
+      irPara(3);
+    } else {
+      statusDiv.style.color = "#c5221f";
+      statusDiv.textContent = resultado.erro || "Ocorreu um erro ao enviar.";
+    }
+  } catch (err) {
+    statusDiv.style.color = "#c5221f";
+    statusDiv.textContent = "Erro de conexão. Tente novamente.";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Enviar documentação";
+  }
+});
+</script>
+
+</body>
+</html>

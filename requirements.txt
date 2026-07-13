@@ -1,0 +1,17 @@
+Flask==3.0.3
+Flask-SQLAlchemy==3.1.1
+psycopg2-binary==2.9.10
+requests==2.32.3
+
+# Conversão de imagem -> PDF
+img2pdf==0.5.1
+Pillow==10.4.0
+
+# Juntar PDFs (documentos + capacitação)
+pypdf==5.0.1
+
+# Google Drive
+google-api-python-client==2.140.0
+google-auth==2.34.0
+google-auth-httplib2==0.2.0
+gunicorn==22.0.0
