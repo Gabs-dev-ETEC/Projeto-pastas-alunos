@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login - Painel de Revisão</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --azul: #00609F; --azul-escuro: #063C63; --azul-fundo: #EAF3FA;
+    --tinta: #10293D; --tinta-suave: #4C6478; --branco: #FFFFFF;
+    --vermelho: #E74926; --vermelho-fundo: #FDECEA; --raio: 16px;
+    --sombra: 0 6px 20px rgba(6, 60, 99, 0.08);
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif; margin: 0; min-height: 100vh;
+    background: #F7FBFE; color: var(--tinta); display: flex; align-items: center;
+    justify-content: center; padding: 20px;
+  }
+  .card {
+    background: var(--branco); border-radius: var(--raio); box-shadow: var(--sombra);
+    padding: 32px 28px; width: 100%; max-width: 360px;
+  }
+  h1 { font-family: 'Baloo 2', sans-serif; color: var(--azul-escuro); font-size: 1.3rem; margin: 0 0 4px; }
+  p.subtitulo { color: var(--tinta-suave); font-size: 0.88rem; margin: 0 0 22px; }
+  label { display: block; font-size: 0.85rem; font-weight: 600; margin: 14px 0 6px; }
+  input {
+    width: 100%; padding: 11px 12px; border: 1.5px solid #D6E4EE; border-radius: 10px;
+    font-family: inherit; font-size: 0.95rem;
+  }
+  input:focus { outline: none; border-color: var(--azul); }
+  button {
+    width: 100%; margin-top: 22px; border: none; border-radius: 13px; padding: 13px;
+    background: linear-gradient(135deg, var(--azul), var(--azul-escuro)); color: white;
+    font-size: 0.95rem; font-weight: 700; font-family: inherit; cursor: pointer;
+  }
+  .erro {
+    margin-top: 16px; background: var(--vermelho-fundo); color: var(--vermelho);
+    padding: 10px 12px; border-radius: 10px; font-size: 0.85rem; font-weight: 600;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Painel de Revisão</h1>
+    <p class="subtitulo">Entre com seu usuário de revisor.</p>
+    <form method="POST">
+      <label for="username">Usuário</label>
+      <input type="text" id="username" name="username" autocomplete="username" required>
+      <label for="senha">Senha</label>
+      <input type="password" id="senha" name="senha" autocomplete="current-password" required>
+      <button type="submit">Entrar</button>
+    </form>
+    {% if erro %}
+    <div class="erro">{{ erro }}</div>
+    {% endif %}
+  </div>
+</body>
+</html>
