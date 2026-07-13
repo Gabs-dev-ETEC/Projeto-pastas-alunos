@@ -1,10 +1,8 @@
 from flask import Blueprint, current_app, jsonify, render_template, request
 
 from models import APROVADO, AGUARDANDO_VALIDACAO, db, Aluno, DocumentoEnviado
-from services.capacitacao_generator import ModeloNaoEncontrado, gerar_pdf_capacitacao
 from services.documentos_config import documentos_aplicaveis
 from services.drive_client import DriveClient
-from services.pdf_converter import documentos_para_pdf_unico, juntar_pdfs, sanitizar_nome
 from services.sheets_client import SheetsClient
 from services.siga_client import AlunoNaoEncontrado, SigaAPIError, SigaClient
 
@@ -82,61 +80,31 @@ def enviar():
 
     aluno = Aluno(nome=nome, cpf=cpf, curso=curso, sexo=sexo)
     db.session.add(aluno)
-    db.session.commit()
+    db.session.flush()  # garante aluno.id antes de criar os documentos
 
-    # Junta as fotos de todos os documentos exigidos em um único PDF,
-    # uma página por documento, na ordem em que aparecem em DOCUMENTOS.
-    imagens = [request.files[doc.id].read() for doc in obrigatorios]
-    pdf_documentos = documentos_para_pdf_unico(imagens)
-
-    # Gera o certificado de capacitação preenchido com nome e CPF do aluno
-    # a partir do modelo .docx do curso, e junta como páginas extras no
-    # mesmo PDF -- se não existir modelo cadastrado pra esse curso, segue
-    # o fluxo sem a capacitação (não trava o envio do aluno por isso).
-    try:
-        pdf_capacitacao = gerar_pdf_capacitacao(sanitizar_nome(curso), nome, cpf)
-        pdf_bytes = juntar_pdfs([pdf_documentos, pdf_capacitacao])
-    except ModeloNaoEncontrado:
-        current_app.logger.warning(
-            "Sem modelo de capacitação para o curso '%s' -- enviando só os documentos.",
-            curso,
+    # Guarda a foto de cada documento aguardando revisão. O PDF final só
+    # é gerado (documentos + certificado de capacitação) e sobe pro Drive
+    # quando um revisor aprova no painel -- ver routes/painel.py: aprovar().
+    for doc in obrigatorios:
+        arquivo = request.files[doc.id]
+        registro = DocumentoEnviado(
+            aluno_id=aluno.id,
+            tipo_documento=doc.id,
+            nome_arquivo=arquivo.filename or f"{doc.id}.jpg",
+            conteudo=arquivo.read(),
+            status="pendente",
         )
-        pdf_bytes = pdf_documentos
+        db.session.add(registro)
 
-    drive = DriveClient(current_app.config["GOOGLE_CREDENTIALS_JSON"])
-
-    # Pasta do curso (nivel 1) e, dentro dela, a pasta do aluno (nivel 2).
-    # Se quiser SEM subpasta de curso, troque pasta_pai_id abaixo por
-    # current_app.config["DRIVE_PASTA_RAIZ_ID"] diretamente.
-    pasta_curso_id = drive.obter_ou_criar_pasta(
-        sanitizar_nome(curso), current_app.config["DRIVE_PASTA_RAIZ_ID"]
-    )
-    pasta_aluno_id = drive.obter_ou_criar_pasta(
-        sanitizar_nome(nome), pasta_curso_id
-    )
-
-    nome_arquivo = f"{sanitizar_nome(nome)}_{sanitizar_nome(curso)}.pdf"
-
-    # Um único upload pro Drive, em vez de um por documento -- bem mais
-    # rápido e evita o timeout que acontecia com 10 chamadas sequenciais.
-    upload_resultado = drive.enviar_pdf(nome_arquivo, pdf_bytes, pasta_aluno_id)
-
-    registro = DocumentoEnviado(
-        aluno_id=aluno.id,
-        tipo_documento="documentacao_completa",
-        nome_arquivo=nome_arquivo,
-        drive_file_id=upload_resultado["id"],
-        drive_url=upload_resultado["url"],
-    )
-    db.session.add(registro)
     db.session.commit()
 
     # Registra a linha na planilha de controle (Nome | CPF | Curso |
-    # Data de Envio | Dias Úteis desde Envio | Status). Isso não deve
-    # travar o envio do aluno se der algum problema na planilha -- os
-    # documentos já foram salvos no Drive nesse ponto, então só logamos
-    # o erro em vez de derrubar a resposta.
+    # Data de Envio | Dias Úteis desde Envio | Status) assim que o aluno
+    # envia -- a planilha serve pra secretaria acompanhar prazo, então não
+    # espera a revisão. Não deve travar o envio se der problema na
+    # planilha -- os documentos já foram salvos no banco nesse ponto.
     try:
+        drive = DriveClient(current_app.config["GOOGLE_CREDENTIALS_JSON"])
         sheets = SheetsClient(current_app.config["GOOGLE_CREDENTIALS_JSON"])
         planilha_id = sheets.obter_ou_criar_planilha(
             current_app.config["NOME_PLANILHA_CONTROLE"],
@@ -151,4 +119,4 @@ def enviar():
             "Falha ao registrar envio na planilha de controle (aluno_id=%s)", aluno.id
         )
 
-    return jsonify({"status": "ok", "aluno_id": aluno.id, "arquivo_enviado": nome_arquivo})
+    return jsonify({"status": "ok", "aluno_id": aluno.id})
