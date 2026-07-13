@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de Revisão</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --azul: #00609F; --azul-escuro: #063C63; --azul-fundo: #EAF3FA;
+    --tinta: #10293D; --tinta-suave: #4C6478; --branco: #FFFFFF; --raio: 16px;
+    --sombra: 0 6px 20px rgba(6, 60, 99, 0.08);
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif; margin: 0; min-height: 100vh;
+    background: #F7FBFE; color: var(--tinta); padding: 24px 16px 60px;
+  }
+  .topo { max-width: 640px; margin: 0 auto 20px; display: flex; justify-content: space-between; align-items: center; }
+  h1 { font-family: 'Baloo 2', sans-serif; color: var(--azul-escuro); font-size: 1.4rem; margin: 0; }
+  .sair { color: var(--tinta-suave); font-size: 0.85rem; text-decoration: none; font-weight: 600; }
+  .lista { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+  .item {
+    background: var(--branco); border-radius: var(--raio); box-shadow: var(--sombra);
+    padding: 16px 18px; text-decoration: none; color: inherit; display: flex;
+    justify-content: space-between; align-items: center; gap: 12px;
+  }
+  .item .nome { font-weight: 700; font-size: 0.98rem; }
+  .item .detalhe { color: var(--tinta-suave); font-size: 0.85rem; margin-top: 2px; }
+  .item .seta { color: var(--azul); font-size: 1.2rem; }
+  .vazio {
+    max-width: 640px; margin: 40px auto; text-align: center; color: var(--tinta-suave); font-size: 0.9rem;
+  }
+</style>
+</head>
+<body>
+  <div class="topo">
+    <h1>Aguardando revisão</h1>
+    <a class="sair" href="{{ url_for('painel.logout') }}">Sair</a>
+  </div>
+
+  <div class="lista">
+    {% for aluno in alunos %}
+    <a class="item" href="{{ url_for('painel.revisar', aluno_id=aluno.id) }}">
+      <div>
+        <div class="nome">{{ aluno.nome }}</div>
+        <div class="detalhe">{{ aluno.curso }} · enviado em {{ aluno.criado_em.strftime('%d/%m/%Y') }}</div>
+      </div>
+      <span class="seta">→</span>
+    </a>
+    {% else %}
+    <div class="vazio">Nenhum aluno aguardando revisão no momento.</div>
+    {% endfor %}
+  </div>
+</body>
+</html>
