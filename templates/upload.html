@@ -441,8 +441,9 @@
       <div class="trilha-legendas">
         <span data-legenda="0">Boas-vindas</span>
         <span data-legenda="1">Seus dados</span>
-        <span data-legenda="2">Documentos</span>
-        <span data-legenda="3">Concluído</span>
+        <span data-legenda="2">Detalhes</span>
+        <span data-legenda="3">Documentos</span>
+        <span data-legenda="4">Concluído</span>
       </div>
     </div>
   </div>
@@ -512,29 +513,8 @@
 
         <p class="subtitulo" style="text-align:left; margin-top:2px;">Confira se os dados acima estão corretos antes de continuar.</p>
 
-        <label>Sexo</label>
-        <div class="pill-group">
-          <label class="pill">
-            <input type="radio" name="sexo" value="masculino" required>
-            <span>Masculino</span>
-          </label>
-          <label class="pill">
-            <input type="radio" name="sexo" value="feminino" required>
-            <span>Feminino</span>
-          </label>
-        </div>
-
-        <div class="toggle-linha">
-          <span class="rotulo">Meu RG não possui o número do CPF impresso</span>
-          <label class="chave">
-            <input type="checkbox" id="rg_sem_cpf" name="rg_sem_cpf">
-            <span class="trilho"></span>
-            <span class="bola"></span>
-          </label>
-        </div>
-
         <div class="botoes">
-          <button type="button" class="btn btn-primario" onclick="validarEAvancar()">
+          <button type="button" class="btn btn-primario" onclick="irPara(2)">
             Continuar
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
           </button>
@@ -552,8 +532,43 @@
       </div>
     </section>
 
-    <!-- TELA 2 · DOCUMENTOS -->
+    <!-- TELA 2 · SEXO E RG -->
     <section class="tela" data-tela="2">
+      <h2>Mais alguns detalhes</h2>
+      <p class="subtitulo" style="text-align:left; margin-top:4px;">Isso ajuda a definir quais documentos você precisa enviar.</p>
+
+      <label>Sexo</label>
+      <div class="pill-group">
+        <label class="pill">
+          <input type="radio" name="sexo" value="masculino" required>
+          <span>Masculino</span>
+        </label>
+        <label class="pill">
+          <input type="radio" name="sexo" value="feminino" required>
+          <span>Feminino</span>
+        </label>
+      </div>
+
+      <div class="toggle-linha">
+        <span class="rotulo">Meu RG não possui o número do CPF impresso</span>
+        <label class="chave">
+          <input type="checkbox" id="rg_sem_cpf" name="rg_sem_cpf">
+          <span class="trilho"></span>
+          <span class="bola"></span>
+        </label>
+      </div>
+
+      <div class="botoes">
+        <button type="button" class="btn btn-primario" onclick="validarEAvancar()">
+          Continuar
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+        <button type="button" class="btn btn-secundario" onclick="irPara(1)">Voltar</button>
+      </div>
+    </section>
+
+    <!-- TELA 3 · DOCUMENTOS -->
+    <section class="tela" data-tela="3">
       <h2 id="titulo-documentos">Envie seus documentos</h2>
       <p class="subtitulo" style="text-align:left; margin-top:4px;" id="subtitulo-documentos">Toque em cada item para tirar uma foto ou escolher da galeria.</p>
 
@@ -561,13 +576,13 @@
 
       <div class="botoes">
         <button type="submit" class="btn btn-primario" id="btn-enviar">Enviar documentação</button>
-        <button type="button" class="btn btn-secundario" onclick="irPara(1)">Voltar</button>
+        <button type="button" class="btn btn-secundario" onclick="irPara(2)">Voltar</button>
       </div>
       <div class="status" id="status-mensagem"></div>
     </section>
 
-    <!-- TELA 3 · CONCLUÍDO -->
-    <section class="tela" data-tela="3">
+    <!-- TELA 4 · CONCLUÍDO -->
+    <section class="tela" data-tela="4">
       <div class="icone-sucesso">
         <svg viewBox="0 0 24 24" fill="none" stroke="#13A438" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M20 6 9 17l-5-5"/>
@@ -611,7 +626,7 @@ const MENSAGEM_WHATSAPP = "Olá! Acabei de enviar minha documentação e tenho u
 // Navegação entre telas
 // ============================================================
 let telaAtual = 0;
-const TOTAL_TELAS = 4;
+const TOTAL_TELAS = 5;
 
 function irPara(indice) {
   document.querySelectorAll(".tela").forEach((el) => {
@@ -620,12 +635,12 @@ function irPara(indice) {
   telaAtual = indice;
   atualizarTrilha();
   window.scrollTo({ top: 0, behavior: "smooth" });
-  if (indice === 2) renderizarDocumentos();
+  if (indice === 3) renderizarDocumentos();
 }
 
 function validarEAvancar() {
-  const camposDaTela1 = document.querySelectorAll('[data-tela="1"] input, [data-tela="1"] select');
-  for (const campo of camposDaTela1) {
+  const camposDaTela2 = document.querySelectorAll('[data-tela="2"] input, [data-tela="2"] select');
+  for (const campo of camposDaTela2) {
     if (campo.hasAttribute("required")) {
       const grupo = campo.name;
       if (campo.type === "radio") {
@@ -637,7 +652,7 @@ function validarEAvancar() {
       }
     }
   }
-  irPara(2);
+  irPara(3);
 }
 
 function reiniciar() {
@@ -655,7 +670,7 @@ const pontosGrupo = document.getElementById("pontos");
 const COMPRIMENTO_TRILHO = 600;
 
 const POSICOES = [
-  { x: 10, y: 24 }, { x: 137, y: 8 }, { x: 263, y: 8 }, { x: 390, y: 24 },
+  { x: 10, y: 24 }, { x: 105, y: 6 }, { x: 200, y: 24 }, { x: 295, y: 42 }, { x: 390, y: 24 },
 ];
 
 POSICOES.forEach((p, i) => {
@@ -835,7 +850,7 @@ function renderizarDocumentos() {
 // Recalcula os documentos exigidos se o aluno voltar e mudar uma resposta
 document.addEventListener("change", (e) => {
   if (["sexo"].includes(e.target.name) || e.target.id === "rg_sem_cpf") {
-    if (telaAtual >= 2) renderizarDocumentos();
+    if (telaAtual >= 3) renderizarDocumentos();
   }
 });
 
@@ -925,7 +940,7 @@ document.getElementById("btn-enviar").addEventListener("click", async (e) => {
     if (resposta.ok) {
       document.getElementById("link-whatsapp").href =
         `https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent(MENSAGEM_WHATSAPP)}`;
-      irPara(3);
+      irPara(4);
     } else {
       statusDiv.style.color = "#c5221f";
       statusDiv.textContent = resultado.erro || "Ocorreu um erro ao enviar.";
