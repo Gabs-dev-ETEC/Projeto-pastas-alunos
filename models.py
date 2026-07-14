@@ -26,6 +26,16 @@ class Aluno(db.Model):
     avaliado_por = db.Column(db.String(120), nullable=True)
     avaliado_em = db.Column(db.DateTime, nullable=True)
 
+    # Como o aluno optou por enviar a documentação:
+    #   "individual"  -> um arquivo por documento (ver DocumentoEnviado)
+    #   "pdf_unico"   -> um único PDF com tudo junto (ver checklist_pdf_unico)
+    forma_envio = db.Column(db.String(20), default="individual", nullable=False)
+
+    # Quando forma_envio == "pdf_unico": lista (JSON) dos ids de documento
+    # que o próprio aluno confirmou estarem incluídos no PDF único, pra a
+    # secretaria conferir contra o que foi de fato enviado.
+    checklist_pdf_unico = db.Column(db.Text, nullable=True)
+
     # PDF final (só existe depois que um revisor aprova)
     drive_file_id = db.Column(db.String(200), nullable=True)
     drive_url = db.Column(db.String(500), nullable=True)
