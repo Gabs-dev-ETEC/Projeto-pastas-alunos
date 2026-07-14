@@ -1,3 +1,5 @@
+import json
+
 from flask import Blueprint, current_app, jsonify, render_template, request
 
 from models import APROVADO, AGUARDANDO_VALIDACAO, db, Aluno, DocumentoEnviado
@@ -60,8 +62,10 @@ def enviar():
     email = request.form.get("email", "").strip()
     telefone = request.form.get("telefone", "").strip()
     sexo = request.form.get("sexo", "").strip()
-    tipo_certidao = request.form.get("tipo_certidao", "").strip()
     rg_sem_cpf = request.form.get("rg_sem_cpf") == "on"
+    forma_envio = request.form.get("forma_envio", "individual").strip()
+    if forma_envio not in ("individual", "pdf_unico"):
+        forma_envio = "individual"
 
     if not nome or not curso or not sexo or not cpf:
         return jsonify({"erro": "Nome, curso, CPF e sexo são obrigatórios."}), 400
@@ -69,34 +73,68 @@ def enviar():
     respostas = {
         "sexo": sexo,
         "rg_tem_cpf": not rg_sem_cpf,
-        "tipo_certidao": tipo_certidao,
     }
     obrigatorios = documentos_aplicaveis(respostas)
 
-    # Valida que todos os arquivos exigidos por essas respostas realmente
-    # vieram na requisição -- o front já faz isso, mas o backend não confia
-    # cegamente no front.
-    faltando = [doc.label for doc in obrigatorios if doc.id not in request.files]
-    if faltando:
-        return jsonify({"erro": f"Documentos faltando: {', '.join(faltando)}"}), 400
-
-    aluno = Aluno(nome=nome, cpf=cpf, curso=curso, sexo=sexo)
+    aluno = Aluno(nome=nome, cpf=cpf, curso=curso, sexo=sexo, forma_envio=forma_envio)
     db.session.add(aluno)
     db.session.flush()  # garante aluno.id antes de criar os documentos
 
-    # Guarda a foto de cada documento aguardando revisão. O PDF final só
-    # é gerado (documentos + certificado de capacitação) e sobe pro Drive
-    # quando um revisor aprova no painel -- ver routes/painel.py: aprovar().
-    for doc in obrigatorios:
-        arquivo = request.files[doc.id]
+    if forma_envio == "pdf_unico":
+        # Aluno optou por mandar um único PDF com toda a documentação em
+        # vez de um arquivo por documento. Nesse caso não dá pra conferir
+        # arquivo por arquivo -- em vez disso exigimos que o aluno confirme,
+        # num checklist, quais documentos estão dentro desse PDF, e essa
+        # lista fica salva pra secretaria conferir contra o PDF enviado.
+        arquivo_pdf = request.files.get("pdf_completo")
+        if arquivo_pdf is None or not arquivo_pdf.filename:
+            return jsonify({"erro": "Envie o arquivo PDF com a documentação completa."}), 400
+
+        try:
+            checklist_ids = json.loads(request.form.get("checklist", "[]"))
+        except ValueError:
+            checklist_ids = []
+        if not isinstance(checklist_ids, list):
+            checklist_ids = []
+
+        faltando = [doc.label for doc in obrigatorios if doc.id not in checklist_ids]
+        if faltando:
+            return jsonify(
+                {"erro": f"Confirme no checklist que o PDF contém: {', '.join(faltando)}"}
+            ), 400
+
+        conteudo_pdf = arquivo_pdf.read()
         registro = DocumentoEnviado(
             aluno_id=aluno.id,
-            tipo_documento=doc.id,
-            nome_arquivo=arquivo.filename or f"{doc.id}.jpg",
-            conteudo=arquivo.read(),
+            tipo_documento="pdf_completo",
+            nome_arquivo=arquivo_pdf.filename or "documentacao-completa.pdf",
+            conteudo=conteudo_pdf,
             status="pendente",
         )
         db.session.add(registro)
+        aluno.checklist_pdf_unico = json.dumps(checklist_ids)
+    else:
+        # Valida que todos os arquivos exigidos por essas respostas
+        # realmente vieram na requisição -- o front já faz isso, mas o
+        # backend não confia cegamente no front.
+        faltando = [doc.label for doc in obrigatorios if doc.id not in request.files]
+        if faltando:
+            return jsonify({"erro": f"Documentos faltando: {', '.join(faltando)}"}), 400
+
+        # Guarda a foto (ou PDF, se o aluno usou "Anexar arquivo") de cada
+        # documento aguardando revisão. O PDF final só é gerado (documentos
+        # + certificado de capacitação) e sobe pro Drive quando um revisor
+        # aprova no painel -- ver routes/painel.py: aprovar().
+        for doc in obrigatorios:
+            arquivo = request.files[doc.id]
+            registro = DocumentoEnviado(
+                aluno_id=aluno.id,
+                tipo_documento=doc.id,
+                nome_arquivo=arquivo.filename or f"{doc.id}.jpg",
+                conteudo=arquivo.read(),
+                status="pendente",
+            )
+            db.session.add(registro)
 
     db.session.commit()
 
