@@ -1,8 +1,13 @@
+import logging
+
 import requests
+
+logger = logging.getLogger(__name__)
 
 ENDPOINT_ALUNO = "/sigaAPI/alunoConsultar"
 ENDPOINT_MATRICULA = "/sigaAPI/matriculaConsultar"
 ENDPOINT_CURSO = "/sigaAPI/cursoConsultar"
+ENDPOINT_COBRANCA_POR_CPF = "/sigaAPI/cobrancaConsultarPorCpf"
 
 TIMEOUT_SEGUNDOS = 10
 
@@ -95,18 +100,20 @@ class SigaClient:
         }
 
     def _buscar_curso(self, cpf_limpo: str) -> str:
-        try:
-            matricula = self._get(ENDPOINT_MATRICULA, {"cpf": cpf_limpo})
-        except (AlunoNaoEncontrado, SigaAPIError):
-            return ""
-
-        curso_id = matricula.get("tb_curso_id")
+        curso_id = self._buscar_curso_id(cpf_limpo)
         if not curso_id:
+            logger.warning(
+                "SIGA: não foi possível descobrir tb_curso_id para o CPF %s", cpf_limpo
+            )
             return ""
 
         try:
             curso = self._get(ENDPOINT_CURSO, {"id": curso_id})
-        except (AlunoNaoEncontrado, SigaAPIError):
+        except (AlunoNaoEncontrado, SigaAPIError) as exc:
+            logger.warning(
+                "SIGA: cursoConsultar falhou para id=%s (cpf %s): %s",
+                curso_id, cpf_limpo, exc,
+            )
             return ""
 
         # cursoConsultar?id= costuma devolver um dict único; se algum dia
@@ -114,4 +121,71 @@ class SigaClient:
         if isinstance(curso, list):
             curso = curso[0] if curso else {}
 
-        return curso.get("nome") or ""
+        nome = curso.get("nome") or ""
+        if not nome:
+            logger.warning(
+                "SIGA: cursoConsultar?id=%s respondeu sem 'nome' (cpf %s): %r",
+                curso_id, cpf_limpo, curso,
+            )
+        return nome
+
+    def _buscar_curso_id(self, cpf_limpo: str):
+        """
+        Tenta descobrir o tb_curso_id do aluno por dois caminhos, porque
+        matriculaConsultar?cpf= sozinho pode não bastar (a doc do SIGA
+        indica que cpf precisa vir acompanhado de tb_curso_id nesse
+        endpoint).
+
+        1) matriculaConsultar?cpf=  -- tentativa direta (funciona se a
+           API aceitar cpf isolado, apesar do que a doc sugere).
+        2) cobrancaConsultarPorCpf?cpf= -- pega tb_contrato_id de uma
+           cobrança do aluno e usa matriculaConsultar?id=<contrato>
+           para obter o tb_curso_id.
+        """
+        try:
+            matricula = self._get(ENDPOINT_MATRICULA, {"cpf": cpf_limpo})
+            curso_id = matricula.get("tb_curso_id")
+            if curso_id:
+                return curso_id
+            logger.info(
+                "SIGA: matriculaConsultar?cpf=%s respondeu sem tb_curso_id, "
+                "tentando via cobrancaConsultarPorCpf", cpf_limpo,
+            )
+        except (AlunoNaoEncontrado, SigaAPIError) as exc:
+            logger.info(
+                "SIGA: matriculaConsultar?cpf=%s falhou (%s), tentando via "
+                "cobrancaConsultarPorCpf", cpf_limpo, exc,
+            )
+
+        try:
+            cobrancas = self._get(ENDPOINT_COBRANCA_POR_CPF, {"cpf": cpf_limpo})
+        except (AlunoNaoEncontrado, SigaAPIError) as exc:
+            logger.warning(
+                "SIGA: cobrancaConsultarPorCpf?cpf=%s também falhou: %s",
+                cpf_limpo, exc,
+            )
+            return None
+
+        if isinstance(cobrancas, dict):
+            cobrancas = [cobrancas]
+        if not cobrancas:
+            return None
+
+        tb_contrato_id = None
+        for cobranca in cobrancas:
+            tb_contrato_id = cobranca.get("tb_contrato_id")
+            if tb_contrato_id:
+                break
+        if not tb_contrato_id:
+            return None
+
+        try:
+            matricula = self._get(ENDPOINT_MATRICULA, {"id": tb_contrato_id})
+        except (AlunoNaoEncontrado, SigaAPIError) as exc:
+            logger.warning(
+                "SIGA: matriculaConsultar?id=%s falhou (cpf %s): %s",
+                tb_contrato_id, cpf_limpo, exc,
+            )
+            return None
+
+        return matricula.get("tb_curso_id")
