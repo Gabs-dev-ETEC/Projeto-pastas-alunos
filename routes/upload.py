@@ -57,6 +57,8 @@ def enviar():
     nome = request.form.get("nome", "").strip()
     curso = request.form.get("curso", "").strip()
     cpf = request.form.get("cpf", "").strip()
+    email = request.form.get("email", "").strip()
+    telefone = request.form.get("telefone", "").strip()
     sexo = request.form.get("sexo", "").strip()
     tipo_certidao = request.form.get("tipo_certidao", "").strip()
     rg_sem_cpf = request.form.get("rg_sem_cpf") == "on"
