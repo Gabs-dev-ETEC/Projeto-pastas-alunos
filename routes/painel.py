@@ -1,4 +1,5 @@
 import io
+import json
 from datetime import datetime
 
 from flask import (
@@ -25,16 +26,18 @@ from models import (
     db,
 )
 from services.capacitacao_generator import ModeloNaoEncontrado, gerar_pdf_capacitacao
-from services.documentos_config import label_por_id
+from services.documentos_config import documentos_aplicaveis, label_por_id
 from services.drive_client import DriveClient
-from services.pdf_converter import documentos_para_pdf_unico, juntar_pdfs, sanitizar_nome
+from services.pdf_converter import documentos_para_pdf_unico, eh_pdf, juntar_pdfs, sanitizar_nome
 from services.sheets_client import SheetsClient
 
 painel_bp = Blueprint("painel", __name__, url_prefix="/painel")
 
 
 def _detectar_mimetype(conteudo: bytes) -> str:
-    """Descobre o content-type certo pra servir a imagem de volta pro navegador."""
+    """Descobre o content-type certo pra servir o arquivo de volta pro navegador."""
+    if eh_pdf(conteudo):
+        return "application/pdf"
     try:
         with Image.open(io.BytesIO(conteudo)) as imagem:
             formato = (imagem.format or "JPEG").upper()
@@ -119,16 +122,35 @@ def revisar(aluno_id):
         .order_by(DocumentoEnviado.id.asc())
         .all()
     )
-    # `label` não é coluna do modelo -- é só um atributo em memória pra o
-    # template mostrar o nome bonito (ex: "RG - Frente") em vez do id
-    # interno (ex: "rg_frente").
+    # `label` e `eh_pdf` não são colunas do modelo -- são só atributos em
+    # memória pra o template mostrar o nome bonito (ex: "RG - Frente" em
+    # vez de "rg_frente") e decidir entre exibir <img> ou um link de PDF.
     for doc in documentos:
         doc.label = label_por_id(doc.tipo_documento)
+        doc.eh_pdf = eh_pdf(doc.conteudo) if doc.conteudo else False
+
+    # Quando o aluno mandou um único PDF com tudo (forma_envio ==
+    # "pdf_unico"), não temos um arquivo por documento pra conferir -- em
+    # vez disso mostramos o checklist que o próprio aluno preencheu,
+    # dizendo o que ele afirma que está dentro do PDF.
+    checklist = None
+    if aluno.forma_envio == "pdf_unico":
+        respostas = {"sexo": aluno.sexo, "rg_tem_cpf": True}
+        try:
+            marcados = set(json.loads(aluno.checklist_pdf_unico or "[]"))
+        except ValueError:
+            marcados = set()
+        checklist = [
+            {"label": doc.label, "marcado": doc.id in marcados}
+            for doc in documentos_aplicaveis(respostas)
+        ]
 
     # O template ficou salvo como templates/painel.py (extensão errada --
     # o conteúdo é HTML normal). Renderiza normal, mas o ideal é renomear
     # esse arquivo pra templates/painel.html numa próxima limpeza.
-    return render_template("painel.py", aluno=aluno, documentos=documentos)
+    return render_template(
+        "painel.py", aluno=aluno, documentos=documentos, checklist=checklist
+    )
 
 
 @painel_bp.route("/aluno/<int:aluno_id>/documento/<int:documento_id>/imagem")
