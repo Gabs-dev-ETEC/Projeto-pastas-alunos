@@ -44,6 +44,7 @@ from services.capacitacao_generator import ModeloNaoEncontrado, gerar_pdf_capaci
 from services.documentos_config import label_por_id
 from services.drive_client import DriveClient
 from services.pdf_converter import documentos_para_pdf_unico, juntar_pdfs, sanitizar_nome
+from services.sheets_client import SheetsClient
 
 painel_bp = Blueprint("painel", __name__, url_prefix="/painel")
 
@@ -56,6 +57,46 @@ def _detectar_mimetype(conteudo: bytes) -> str:
     except Exception:
         formato = "JPEG"
     return "image/jpeg" if formato == "JPEG" else f"image/{formato.lower()}"
+
+
+@painel_bp.route("/setup-inicial", methods=["GET", "POST"])
+def setup_inicial():
+    """
+    Cria (ou reseta a senha de) um usuário revisor sem precisar de acesso
+    ao Shell do Render (que é pago no plano free). Só funciona se a
+    variável de ambiente SETUP_TOKEN estiver configurada -- sem ela, essa
+    rota devolve 404 como se não existisse.
+
+    IMPORTANTE: depois de criar os revisores que precisar, apague a
+    variável SETUP_TOKEN no Render (aba Environment). Isso desliga essa
+    rota automaticamente, sem precisar mexer em nenhum código de novo.
+    """
+    token_esperado = current_app.config.get("SETUP_TOKEN", "")
+    if not token_esperado or request.args.get("token") != token_esperado:
+        abort(404)
+
+    mensagem = None
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        nome = request.form.get("nome", "").strip()
+        senha = request.form.get("senha", "")
+
+        if not username or not nome or not senha:
+            mensagem = "Preencha usuário, nome e senha."
+        else:
+            revisor = Revisor.query.filter_by(username=username).first()
+            if revisor is None:
+                revisor = Revisor(username=username, nome=nome)
+                db.session.add(revisor)
+            else:
+                revisor.nome = nome
+            revisor.set_senha(senha)
+            db.session.commit()
+            mensagem = f"Revisor '{username}' criado/atualizado com sucesso."
+
+    return render_template(
+        "setup_inicial.html", mensagem=mensagem, token=request.args.get("token")
+    )
 
 
 @painel_bp.route("/login", methods=["GET", "POST"])
@@ -182,6 +223,24 @@ def aprovar(aluno_id):
         doc.status = "aprovado"
 
     db.session.commit()
+
+    # Marca na planilha de controle quem aprovou. Feito depois do commit
+    # de propósito: se a planilha falhar (fora do ar, renomeada, etc.), a
+    # aprovação em si (banco + Drive) já está garantida -- só loga o erro
+    # em vez de derrubar a resposta pro revisor.
+    try:
+        sheets = SheetsClient(current_app.config["GOOGLE_CREDENTIALS_JSON"])
+        planilha_id = sheets.obter_ou_criar_planilha(
+            current_app.config["NOME_PLANILHA_CONTROLE"],
+            current_app.config["DRIVE_PASTA_RAIZ_ID"],
+            drive,
+        )
+        sheets.marcar_aprovado(planilha_id, aluno.cpf, current_user.nome)
+    except Exception:
+        current_app.logger.exception(
+            "Falha ao marcar 'Aprovado por' na planilha de controle (aluno_id=%s)", aluno.id
+        )
+
     return jsonify({"status": "ok", "drive_url": aluno.drive_url})
 
 
