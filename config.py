@@ -33,6 +33,16 @@ class Config:
     # python3 -c "import secrets; print(secrets.token_hex(32))"
     SECRET_KEY = os.environ.get("SECRET_KEY", "")
 
+    # E-mail (Gmail/SMTP) -- avisa o aluno quando a secretaria aprova ou
+    # marca pendência na documentação. Pra usar o Gmail, gere uma "senha de
+    # app" em https://myaccount.google.com/apppasswords (não dá pra usar a
+    # senha normal da conta com SMTP).
+    SMTP_HOST = os.environ.get("SMTP_HOST", "smtp.gmail.com")
+    SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
+    SMTP_USER = os.environ.get("SMTP_USER", "")
+    SMTP_SENHA = os.environ.get("SMTP_SENHA", "")
+    SMTP_REMETENTE_NOME = os.environ.get("SMTP_REMETENTE_NOME", "Secretaria Acadêmica")
+
     # Token temporário pra liberar a rota /painel/setup-inicial, usada só
     # pra criar o primeiro revisor sem precisar do Shell do Render (pago
     # no plano free). Configure essa variável, use a rota, depois APAGUE
