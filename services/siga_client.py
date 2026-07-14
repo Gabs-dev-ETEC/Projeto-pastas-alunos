@@ -1,26 +1,8 @@
-"""
-Cliente para a API do SIGA (busca de dados do aluno por CPF).
 
-Base: https://etec.sistemasiga.net/sigaAPI/
-Documentação: https://etec.sistemasiga.net/sigaAPI/documentacao
-
-⚠️ IMPORTANTE: a página de documentação exige login para ser vista, então
-o endpoint (`ENDPOINT_BUSCA_CPF`), o header de autenticação e os nomes dos
-campos no JSON de resposta abaixo estão configurados com o padrão mais
-comum pra esse tipo de API (mesmo usado em "Instituição > Configurações >
-API" do SIGA). Se a chamada retornar 404 mesmo pra um CPF que existe, ou
-401 mesmo com a chave certa, é só ajustar:
-  1) ENDPOINT_BUSCA_CPF (o caminho da rota de busca)
-  2) o header em `_headers()` (ex.: pode ser "apikey" em vez de
-     "Authorization: Bearer ...")
-  3) os nomes de campo em `_normalizar()` (ex.: pode vir "nomeCompleto"
-     em vez de "nome")
-usando o exemplo de requisição que aparece na documentação.
-"""
 
 import requests
 
-ENDPOINT_BUSCA_CPF = "/sigaAPI/alunos/cpf/{cpf}"
+ENDPOINT_BUSCA_CPF = "/sigaAPI/alunoConsultar"
 
 TIMEOUT_SEGUNDOS = 10
 
@@ -44,7 +26,7 @@ class SigaClient:
 
     def _headers(self) -> dict:
         return {
-            "Authorization": f"Bearer {self.api_key}",
+            "X-API-Key": self.api_key,
             "Accept": "application/json",
         }
 
@@ -59,10 +41,15 @@ class SigaClient:
         if len(cpf_limpo) != 11:
             raise SigaAPIError("CPF inválido.")
 
-        url = self.base_url + ENDPOINT_BUSCA_CPF.format(cpf=cpf_limpo)
+        url = self.base_url + ENDPOINT_BUSCA_CPF
 
         try:
-            resposta = requests.get(url, headers=self._headers(), timeout=TIMEOUT_SEGUNDOS)
+            resposta = requests.get(
+                url,
+                headers=self._headers(),
+                params={"cpf": cpf_limpo},
+                timeout=TIMEOUT_SEGUNDOS,
+            )
         except requests.RequestException as exc:
             raise SigaAPIError(f"Falha de conexão com o SIGA: {exc}") from exc
 
@@ -70,26 +57,34 @@ class SigaClient:
             raise AlunoNaoEncontrado(cpf_limpo)
         if resposta.status_code in (401, 403):
             raise SigaAPIError("Chave de API do SIGA inválida, expirada ou sem permissão.")
+        if resposta.status_code == 429:
+            raise SigaAPIError("Limite de requisições do SIGA excedido. Tente novamente em instantes.")
         if not resposta.ok:
             raise SigaAPIError(
                 f"SIGA retornou erro {resposta.status_code}: {resposta.text[:300]}"
             )
 
         try:
-            dados = resposta.json()
+            corpo = resposta.json()
         except ValueError as exc:
             raise SigaAPIError("Resposta do SIGA não é um JSON válido.") from exc
+
+        # A API do SIGA envelopa a resposta em {"sucesso": bool, "dados": {...}}
+        if not corpo.get("sucesso"):
+            raise SigaAPIError(corpo.get("mensagem") or "SIGA retornou uma falha não especificada.")
+
+        dados = corpo.get("dados") or {}
+        if not dados:
+            raise AlunoNaoEncontrado(cpf_limpo)
 
         return self._normalizar(dados, cpf_limpo)
 
     @staticmethod
     def _normalizar(dados: dict, cpf_limpo: str) -> dict:
-        # Tenta alguns nomes de campo alternativos, já que a doc não pôde
-        # ser conferida -- ajuste aqui se os nomes reais forem diferentes.
         return {
-            "nome": dados.get("nome") or dados.get("nomeCompleto") or dados.get("nome_completo") or "",
+            "nome": dados.get("nome") or "",
             "cpf": cpf_limpo,
-            "curso": dados.get("curso") or dados.get("nomeCurso") or dados.get("nome_curso") or "",
-            "email": dados.get("email") or dados.get("emailAluno") or "",
-            "telefone": dados.get("telefone") or dados.get("celular") or dados.get("fone") or "",
+            "curso": dados.get("curso") or "",
+            "email": dados.get("email") or "",
+            "telefone": dados.get("celular") or dados.get("telefone") or "",
         }
