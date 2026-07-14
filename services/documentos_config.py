@@ -1,18 +1,3 @@
-"""
-Definição de quais documentos são exigidos e em que condição.
-
-Cada documento tem:
-  - id: identificador usado internamente (nome de arquivo, campo do form)
-  - label: nome exibido pro aluno
-  - condicao: função que recebe as respostas do aluno (dict) e devolve
-              True/False dizendo se esse documento deve ser pedido
-  - grupo: documentos com o mesmo grupo são alternativas entre si
-           (o aluno manda um OU outro, não os dois)
-
-As "respostas do aluno" (dict `respostas`) vêm de perguntas simples feitas
-antes da lista de upload aparecer, por exemplo:
-  {"sexo": "masculino", "rg_tem_cpf": False, "tipo_certidao": "nascimento"}
-"""
 
 from dataclasses import dataclass
 from typing import Callable, Optional
@@ -38,14 +23,6 @@ def _sem_cpf_no_rg(respostas: dict) -> bool:
     return respostas.get("rg_tem_cpf") is False
 
 
-def _certidao_nascimento(respostas: dict) -> bool:
-    return respostas.get("tipo_certidao") == "nascimento"
-
-
-def _certidao_casamento(respostas: dict) -> bool:
-    return respostas.get("tipo_certidao") == "casamento"
-
-
 DOCUMENTOS: list[DocumentoRequerido] = [
     DocumentoRequerido("rg_frente", "RG - Frente", _sempre),
     DocumentoRequerido("rg_verso", "RG - Verso", _sempre),
@@ -54,10 +31,9 @@ DOCUMENTOS: list[DocumentoRequerido] = [
     DocumentoRequerido("reservista", "Certificado de Reservista", _somente_homens),
     DocumentoRequerido("comprovante_residencia", "Comprovante de Residência", _sempre),
     DocumentoRequerido(
-        "certidao_nascimento", "Certidão de Nascimento", _certidao_nascimento, grupo="certidao"
-    ),
-    DocumentoRequerido(
-        "certidao_casamento", "Certidão de Casamento", _certidao_casamento, grupo="certidao"
+        "certidao_nascimento_casamento",
+        "Certidão de Nascimento OU Certidão de Casamento",
+        _sempre,
     ),
     DocumentoRequerido("certificado_ensino_medio", "Certificado do Ensino Médio", _sempre),
     DocumentoRequerido("historico_ensino_medio", "Histórico do Ensino Médio", _sempre),
