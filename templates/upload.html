@@ -533,18 +533,6 @@
           </label>
         </div>
 
-        <label>Você vai enviar:</label>
-        <div class="pill-group">
-          <label class="pill">
-            <input type="radio" name="tipo_certidao" value="nascimento" required>
-            <span>Certidão de Nascimento</span>
-          </label>
-          <label class="pill">
-            <input type="radio" name="tipo_certidao" value="casamento" required>
-            <span>Certidão de Casamento</span>
-          </label>
-        </div>
-
         <div class="botoes">
           <button type="button" class="btn btn-primario" onclick="validarEAvancar()">
             Continuar
@@ -796,8 +784,7 @@ const DOCUMENTOS = [
   { id: "titulo_eleitor", label: "Título de Eleitor", condicao: () => true },
   { id: "reservista", label: "Certificado de Reservista", condicao: (r) => r.sexo === "masculino" },
   { id: "comprovante_residencia", label: "Comprovante de Residência", condicao: () => true },
-  { id: "certidao_nascimento", label: "Certidão de Nascimento", condicao: (r) => r.tipo_certidao === "nascimento" },
-  { id: "certidao_casamento", label: "Certidão de Casamento", condicao: (r) => r.tipo_certidao === "casamento" },
+  { id: "certidao_nascimento_casamento", label: "Certidão de Nascimento OU Certidão de Casamento", condicao: () => true },
   { id: "certificado_ensino_medio", label: "Certificado do Ensino Médio", condicao: () => true },
   { id: "historico_ensino_medio", label: "Histórico do Ensino Médio", condicao: () => true },
 ];
@@ -808,7 +795,6 @@ function respostasAtuais() {
   return {
     sexo: document.querySelector('input[name="sexo"]:checked')?.value,
     rg_sem_cpf: document.getElementById("rg_sem_cpf").checked,
-    tipo_certidao: document.querySelector('input[name="tipo_certidao"]:checked')?.value,
   };
 }
 
@@ -848,7 +834,7 @@ function renderizarDocumentos() {
 
 // Recalcula os documentos exigidos se o aluno voltar e mudar uma resposta
 document.addEventListener("change", (e) => {
-  if (["sexo", "tipo_certidao"].includes(e.target.name) || e.target.id === "rg_sem_cpf") {
+  if (["sexo"].includes(e.target.name) || e.target.id === "rg_sem_cpf") {
     if (telaAtual >= 2) renderizarDocumentos();
   }
 });
@@ -923,7 +909,6 @@ document.getElementById("btn-enviar").addEventListener("click", async (e) => {
     formData.append("cpf", document.getElementById("cpf").value);
     formData.append("curso", document.getElementById("curso").value);
     formData.append("sexo", document.querySelector('input[name="sexo"]:checked').value);
-    formData.append("tipo_certidao", document.querySelector('input[name="tipo_certidao"]:checked').value);
     if (document.getElementById("rg_sem_cpf").checked) formData.append("rg_sem_cpf", "on");
 
     for (let i = 0; i < inputsArquivo.length; i++) {
