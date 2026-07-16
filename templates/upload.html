@@ -579,37 +579,43 @@
     <!-- TELA 3 · DOCUMENTOS -->
     <section class="tela" data-tela="3">
       <h2 id="titulo-documentos">Envie seus documentos</h2>
-      <p class="subtitulo" style="text-align:left; margin-top:4px;">Escolha <strong>uma</strong> das duas formas abaixo — não precisa fazer as duas.</p>
+      <p class="subtitulo" style="text-align:left; margin-top:4px;">Escolha como prefere enviar.</p>
 
-      <h3 style="margin:22px 0 4px; color:var(--azul-escuro);">Documentos separados</h3>
-      <p class="subtitulo" style="text-align:left; margin-top:0;" id="subtitulo-documentos">Toque em cada item para tirar uma foto ou escolher da galeria.</p>
-
-      <div id="lista-documentos"></div>
-
-      <div class="botoes">
-        <button type="button" class="btn btn-primario" id="btn-enviar">Enviar documentos separados</button>
+      <div class="pill-group" style="margin-top:14px;">
+        <label class="pill">
+          <input type="radio" name="forma_envio" value="individual" checked>
+          <span>Documentos separados</span>
+        </label>
+        <label class="pill">
+          <input type="radio" name="forma_envio" value="pdf_unico">
+          <span>Um único PDF</span>
+        </label>
       </div>
 
-      <div class="divisor-ou"><span>ou</span></div>
+      <div id="modo-individual" style="margin-top:22px;">
+        <p class="subtitulo" style="text-align:left; margin-top:0;" id="subtitulo-documentos">Toque em cada item para tirar uma foto ou escolher da galeria.</p>
+        <div id="lista-documentos"></div>
+      </div>
 
-      <h3 style="margin:0 0 4px; color:var(--azul-escuro);">Um único PDF com tudo</h3>
-      <p class="subtitulo" style="text-align:left; margin-top:0;">Junte todos os documentos num só arquivo PDF e envie aqui.</p>
+      <div id="modo-pdf-unico" class="hidden" style="margin-top:22px;">
+        <p class="subtitulo" style="text-align:left; margin-top:0;">Junte todos os documentos num só arquivo PDF e envie aqui.</p>
 
-      <div class="doc-item" id="bloco-pdf-completo">
-        <div class="doc-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0-12 4 4m-4-4-4 4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></div>
-        <div class="doc-texto">
-          <div class="doc-label">PDF com toda a documentação</div>
-          <small>Nenhum arquivo selecionado</small>
+        <div class="doc-item" id="bloco-pdf-completo">
+          <div class="doc-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0-12 4 4m-4-4-4 4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></div>
+          <div class="doc-texto">
+            <div class="doc-label">PDF com toda a documentação</div>
+            <small>Nenhum arquivo selecionado</small>
+          </div>
+          <button type="button" class="doc-botao" onclick="document.getElementById('input-pdf-completo').click()">Anexar</button>
+          <input type="file" accept="application/pdf" name="pdf_completo" id="input-pdf-completo">
         </div>
-        <button type="button" class="doc-botao" onclick="document.getElementById('input-pdf-completo').click()">Anexar</button>
-        <input type="file" accept="application/pdf" name="pdf_completo" id="input-pdf-completo">
+
+        <label style="margin-top:16px;">Esse PDF contém:</label>
+        <div id="checklist-pdf-unico"></div>
       </div>
 
-      <label style="margin-top:16px;">Esse PDF contém:</label>
-      <div id="checklist-pdf-unico"></div>
-
-      <div class="botoes">
-        <button type="button" class="btn btn-primario" id="btn-enviar-pdf-unico">Enviar PDF único</button>
+      <div class="botoes" style="margin-top:26px;">
+        <button type="button" class="btn btn-primario" id="btn-enviar">Enviar documentação</button>
       </div>
 
       <div class="botoes">
@@ -672,7 +678,10 @@ function irPara(indice) {
   telaAtual = indice;
   atualizarTrilha();
   window.scrollTo({ top: 0, behavior: "smooth" });
-  if (indice === 3) renderizarDocumentos();
+  if (indice === 3) {
+    renderizarDocumentos();
+    renderizarChecklistPdfUnico();
+  }
 }
 
 function validarEAvancar() {
@@ -696,6 +705,13 @@ function reiniciar() {
   document.querySelectorAll('input[type=text], select').forEach(el => el.value = "");
   document.querySelectorAll('input[type=checkbox], input[type=radio]').forEach(el => el.checked = false);
   listaDiv.innerHTML = "";
+  document.getElementById("checklist-pdf-unico").innerHTML = "";
+  document.querySelector('input[name="forma_envio"][value="individual"]').checked = true;
+  alternarModoEnvio();
+  const blocoPdf = document.getElementById("bloco-pdf-completo");
+  blocoPdf.classList.remove("enviado");
+  blocoPdf.querySelector("small").textContent = "Nenhum arquivo selecionado";
+  blocoPdf.querySelector(".doc-botao").textContent = "Anexar";
   irPara(0);
 }
 
@@ -883,10 +899,63 @@ function renderizarDocumentos() {
   });
 }
 
-// Recalcula os documentos exigidos se o aluno voltar e mudar uma resposta
+const checklistDiv = document.getElementById("checklist-pdf-unico");
+
+function renderizarChecklistPdfUnico() {
+  const respostas = respostasAtuais();
+  checklistDiv.innerHTML = "";
+
+  DOCUMENTOS.filter((doc) => doc.condicao(respostas)).forEach((doc) => {
+    const item = document.createElement("label");
+    item.className = "checklist-item";
+    item.innerHTML = `
+      <input type="checkbox" value="${doc.id}">
+      <span>${doc.label}</span>
+    `;
+    checklistDiv.appendChild(item);
+  });
+}
+
+// Recalcula os documentos exigidos (e o checklist do PDF único) se o
+// aluno voltar e mudar uma resposta
 document.addEventListener("change", (e) => {
   if (["sexo"].includes(e.target.name) || e.target.id === "rg_sem_cpf") {
-    if (telaAtual >= 3) renderizarDocumentos();
+    if (telaAtual >= 3) {
+      renderizarDocumentos();
+      renderizarChecklistPdfUnico();
+    }
+  }
+});
+
+// ============================================================
+// Alterna entre "documentos separados" e "PDF único"
+// ============================================================
+const modoIndividualDiv = document.getElementById("modo-individual");
+const modoPdfUnicoDiv = document.getElementById("modo-pdf-unico");
+
+function formaEnvioAtual() {
+  return document.querySelector('input[name="forma_envio"]:checked')?.value || "individual";
+}
+
+function alternarModoEnvio() {
+  const pdfUnico = formaEnvioAtual() === "pdf_unico";
+  modoIndividualDiv.classList.toggle("hidden", pdfUnico);
+  modoPdfUnicoDiv.classList.toggle("hidden", !pdfUnico);
+  document.getElementById("status-mensagem").textContent = "";
+}
+
+document.querySelectorAll('input[name="forma_envio"]').forEach((radio) => {
+  radio.addEventListener("change", alternarModoEnvio);
+});
+
+// Feedback visual ao anexar o PDF único
+const blocoPdfCompleto = document.getElementById("bloco-pdf-completo");
+const inputPdfCompleto = document.getElementById("input-pdf-completo");
+inputPdfCompleto.addEventListener("change", () => {
+  if (inputPdfCompleto.files.length > 0) {
+    blocoPdfCompleto.classList.add("enviado");
+    blocoPdfCompleto.querySelector("small").textContent = inputPdfCompleto.files[0].name;
+    blocoPdfCompleto.querySelector(".doc-botao").textContent = "Trocar";
   }
 });
 
@@ -934,41 +1003,82 @@ function comprimirImagem(arquivo) {
 }
 
 // ============================================================
-// Envio
+// Envio (um único botão — o comportamento muda conforme o modo escolhido)
 // ============================================================
-document.getElementById("btn-enviar").addEventListener("click", async (e) => {
-  e.preventDefault();
-  const btn = document.getElementById("btn-enviar");
-  const statusDiv = document.getElementById("status-mensagem");
+function dadosComuns() {
+  const formData = new FormData();
+  formData.append("nome", document.getElementById("nome").value);
+  formData.append("cpf", document.getElementById("cpf").value);
+  formData.append("curso", document.getElementById("curso").value);
+  formData.append("email", document.getElementById("email").value);
+  formData.append("sexo", document.querySelector('input[name="sexo"]:checked').value);
+  if (document.getElementById("rg_sem_cpf").checked) formData.append("rg_sem_cpf", "on");
+  return formData;
+}
 
+async function enviarDocumentosSeparados(btn, statusDiv) {
   const inputsArquivo = Array.from(document.querySelectorAll('#lista-documentos input[type="file"]'));
   const faltando = inputsArquivo.filter((i) => i.files.length === 0);
   if (faltando.length > 0) {
     statusDiv.style.color = "#c5221f";
     statusDiv.textContent = "Anexe todos os documentos antes de enviar.";
     faltando[0].closest(".doc-item").scrollIntoView({ behavior: "smooth", block: "center" });
-    return;
+    return null;
   }
+
+  const formData = dadosComuns();
+  formData.append("forma_envio", "individual");
+
+  for (let i = 0; i < inputsArquivo.length; i++) {
+    const input = inputsArquivo[i];
+    btn.textContent = `Preparando fotos... (${i + 1}/${inputsArquivo.length})`;
+    const arquivoComprimido = await comprimirImagem(input.files[0]);
+    formData.append(input.name, arquivoComprimido);
+  }
+
+  return formData;
+}
+
+async function enviarPdfUnico(statusDiv) {
+  if (inputPdfCompleto.files.length === 0) {
+    statusDiv.style.color = "#c5221f";
+    statusDiv.textContent = "Anexe o PDF com a documentação completa.";
+    blocoPdfCompleto.scrollIntoView({ behavior: "smooth", block: "center" });
+    return null;
+  }
+
+  const marcados = Array.from(checklistDiv.querySelectorAll('input[type="checkbox"]:checked')).map((c) => c.value);
+  const todosItens = Array.from(checklistDiv.querySelectorAll('input[type="checkbox"]'));
+  if (marcados.length < todosItens.length) {
+    statusDiv.style.color = "#c5221f";
+    statusDiv.textContent = "Confirme no checklist todos os documentos que estão dentro do PDF.";
+    checklistDiv.scrollIntoView({ behavior: "smooth", block: "center" });
+    return null;
+  }
+
+  const formData = dadosComuns();
+  formData.append("forma_envio", "pdf_unico");
+  formData.append("pdf_completo", inputPdfCompleto.files[0]);
+  formData.append("checklist", JSON.stringify(marcados));
+
+  return formData;
+}
+
+document.getElementById("btn-enviar").addEventListener("click", async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById("btn-enviar");
+  const statusDiv = document.getElementById("status-mensagem");
 
   btn.disabled = true;
   statusDiv.style.color = "#4C6478";
   statusDiv.textContent = "";
 
   try {
-    const formData = new FormData();
-    formData.append("nome", document.getElementById("nome").value);
-    formData.append("cpf", document.getElementById("cpf").value);
-    formData.append("curso", document.getElementById("curso").value);
-    formData.append("email", document.getElementById("email").value);
-    formData.append("sexo", document.querySelector('input[name="sexo"]:checked').value);
-    if (document.getElementById("rg_sem_cpf").checked) formData.append("rg_sem_cpf", "on");
+    const formData = formaEnvioAtual() === "pdf_unico"
+      ? await enviarPdfUnico(statusDiv)
+      : await enviarDocumentosSeparados(btn, statusDiv);
 
-    for (let i = 0; i < inputsArquivo.length; i++) {
-      const input = inputsArquivo[i];
-      btn.textContent = `Preparando fotos... (${i + 1}/${inputsArquivo.length})`;
-      const arquivoComprimido = await comprimirImagem(input.files[0]);
-      formData.append(input.name, arquivoComprimido);
-    }
+    if (!formData) return;
 
     btn.textContent = "Enviando documentação...";
     const resposta = await fetch("/enviar", { method: "POST", body: formData });
